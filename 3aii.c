@@ -7,9 +7,7 @@ typedef struct {
 } Point;
 
 double distance(Point p1, Point p2) {
-    double dx = p2.x - p1.x;
-    double dy = p2.y - p1.y;
-    return sqrt(dx * dx + dy * dy);
+    return fabs(p2.x - p1.x) + fabs(p2.y - p1.y);
 }
 
 int main(void) {
@@ -22,7 +20,7 @@ int main(void) {
     scanf("%lf %lf", &p2.x, &p2.y);
 
     double d = distance(p1, p2);
-    printf("Euclidean distance = %.4f\n", d);
+    printf("Manhattan distance = %.4f\n", d);
 
     return 0;
 }

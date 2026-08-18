@@ -1,105 +1,25 @@
-/*
- * Exercise VI - Question 2(a)
- * Simulates dynamic memory allocation on top of an integer array of 200
- * elements. Each cell of the array is treated as one memory block.
- *
- * NewMalloc(int dataType)  -> dataType is the number of contiguous blocks
- *                             needed (e.g. pass sizeof(int), sizeof(double),
- *                             sizeof(char) ...). Returns a void* to the
- *                             first block assigned, or NULL if there is not
- *                             enough contiguous free space.
- * NewFree(void *ptr)       -> frees all blocks that belong to the
- *                             allocation starting at ptr.
- */
+# Exercise VI - C Solutions
 
-#include <stdio.h>
-#include <stdlib.h>
+SCS 1301 - Data Structures and Program Design Using C
 
-#define MEM_SIZE 200
+| File       | Question   | Description |
+|------------|------------|-------------|
+| `1.c`      | Q1         | Extends Exercise IV - 3(e)'s scientific calculator menu. All 14 operations are dispatched through a **function pointer table**, plus the division sub-menu, history (option 16), and exit (option 15). |
+| `2a.c`     | Q2(a)      | Simulates a 200-block memory allocator: `NewMalloc(int dataType)` and `NewFree(void *ptr)` over an `int[200]` pool. |
+| `2b.c`     | Q2(b)      | Extends 2a with `Defragment()`, which repacks all allocated blocks to be contiguous. |
+| `2c.c`     | Q2(c)      | Extends the allocator to work with **any primitive type** using a generic `unsigned char[200]` byte pool. |
+| `3ai.c`    | Q3(a)(i)   | Euclidean distance between two 2D points. |
+| `3aii.c`   | Q3(a)(ii)  | Manhattan distance between two 2D points (sheet's "Mantan Distance" is a typo for Manhattan). |
+| `3aiii.c`  | Q3(a)(iii) | Chebyshev distance between two 2D points. |
 
-int memory[MEM_SIZE];      /* the simulated memory              */
-int allocated[MEM_SIZE];   /* 0 = free, otherwise = allocation id */
-int nextId = 1;
+## Build
 
-/* Finds the first contiguous run of free blocks of the requested size */
-void *NewMalloc(int dataType) {
-    int needed = dataType;
-    int start = -1, count = 0;
+Each file is a standalone program. Compile with, e.g.:
 
-    for (int i = 0; i < MEM_SIZE; i++) {
-        if (allocated[i] == 0) {
-            if (count == 0) start = i;
-            count++;
-            if (count == needed) {
-                for (int j = start; j < start + needed; j++)
-                    allocated[j] = nextId;
-                nextId++;
-                return (void *)&memory[start];
-            }
-        } else {
-            count = 0;
-        }
-    }
-    printf("NewMalloc: not enough contiguous memory for %d blocks.\n", needed);
-    return NULL;
-}
+```bash
+gcc -Wall -o calc 1.c -lm
+gcc -Wall -o memalloc 2a.c
+gcc -Wall -o dist 3ai.c -lm
+```
 
-void NewFree(void *ptr) {
-    if (ptr == NULL) return;
-
-    int index = (int *)ptr - memory;
-    if (index < 0 || index >= MEM_SIZE) {
-        printf("NewFree: invalid pointer.\n");
-        return;
-    }
-
-    int id = allocated[index];
-    if (id == 0) {
-        printf("NewFree: memory at this pointer is already free.\n");
-        return;
-    }
-
-    for (int i = 0; i < MEM_SIZE; i++) {
-        if (allocated[i] == id) allocated[i] = 0;
-    }
-    printf("NewFree: memory freed.\n");
-}
-
-int isMemoryFull(void) {
-    for (int i = 0; i < MEM_SIZE; i++)
-        if (allocated[i] == 0) return 0;
-    return 1;
-}
-
-void printMemoryMap(void) {
-    for (int i = 0; i < MEM_SIZE; i++)
-        printf("%c", allocated[i] == 0 ? '.' : '#');
-    printf("\n");
-}
-
-int main(void) {
-    printf("Initial memory map (200 blocks, '.' = free, '#' = used):\n");
-    printMemoryMap();
-
-    /* allocate a few variables of different primitive sizes */
-    void *pInt    = NewMalloc(sizeof(int));
-    void *pDouble = NewMalloc(sizeof(double));
-    void *pChar   = NewMalloc(sizeof(char));
-
-    printf("\nAfter allocating an int, a double and a char:\n");
-    printMemoryMap();
-
-    printf("\nIs memory full? %s\n", isMemoryFull() ? "Yes" : "No");
-
-    NewFree(pDouble);
-    printf("\nAfter freeing the double:\n");
-    printMemoryMap();
-
-    NewFree(pInt);
-    NewFree(pChar);
-
-    printf("\nAfter freeing everything:\n");
-    printMemoryMap();
-
-    return 0;
-}
+(`-lm` is needed for files that use `math.h`.)

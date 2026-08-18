@@ -1,36 +1,89 @@
-/*
- * Exercise VI - Question 3(a)(ii)
- * Manhattan distance between two 2D points (the exercise sheet spells it
- * "Mantan Distance", which is a typo for "Manhattan Distance").
- *
- * The Manhattan distance is the sum of the absolute differences of the
- * coordinates - like walking along a city grid instead of flying straight:
- *     d = |x2 - x1| + |y2 - y1|
- */
-
 #include <stdio.h>
-#include <math.h>
+#include <stdlib.h>
 
-typedef struct {
-    double x;
-    double y;
-} Point;
+#define MEMSIZE 200
 
-double manhattanDistance(Point p1, Point p2) {
-    return fabs(p2.x - p1.x) + fabs(p2.y - p1.y);
+int memory[MEMSIZE];
+int used[MEMSIZE];
+int nextid = 1;
+
+void *NewMalloc(int type) {
+    int needed = type;
+    int start = -1, count = 0;
+
+    for (int i = 0; i < MEMSIZE; i++) {
+        if (used[i] == 0) {
+            if (count == 0) start = i;
+            count++;
+            if (count == needed) {
+                for (int j = start; j < start + needed; j++)
+                    used[j] = nextid;
+                nextid++;
+                return (void *)&memory[start];
+            }
+        } else {
+            count = 0;
+        }
+    }
+    printf("NewMalloc: not enough contiguous memory for %d blocks.\n", needed);
+    return NULL;
+}
+
+void NewFree(void *ptr) {
+    if (ptr == NULL) return;
+
+    int index = (int *)ptr - memory;
+    if (index < 0 || index >= MEMSIZE) {
+        printf("NewFree: invalid pointer.\n");
+        return;
+    }
+
+    int id = used[index];
+    if (id == 0) {
+        printf("NewFree: memory at this pointer is already free.\n");
+        return;
+    }
+
+    for (int i = 0; i < MEMSIZE; i++) {
+        if (used[i] == id) used[i] = 0;
+    }
+    printf("NewFree: memory freed.\n");
+}
+
+int isfull(void) {
+    for (int i = 0; i < MEMSIZE; i++)
+        if (used[i] == 0) return 0;
+    return 1;
+}
+
+void showmap(void) {
+    for (int i = 0; i < MEMSIZE; i++)
+        printf("%c", used[i] == 0 ? '.' : '#');
+    printf("\n");
 }
 
 int main(void) {
-    Point p1, p2;
+    printf("Initial memory map (200 blocks, '.' = free, '#' = used):\n");
+    showmap();
 
-    printf("Enter coordinates of point 1 (x y): ");
-    scanf("%lf %lf", &p1.x, &p1.y);
+    void *p1 = NewMalloc(sizeof(int));
+    void *p2 = NewMalloc(sizeof(double));
+    void *p3 = NewMalloc(sizeof(char));
 
-    printf("Enter coordinates of point 2 (x y): ");
-    scanf("%lf %lf", &p2.x, &p2.y);
+    printf("\nAfter allocating an int, a double and a char:\n");
+    showmap();
 
-    double distance = manhattanDistance(p1, p2);
-    printf("Manhattan distance = %.4f\n", distance);
+    printf("\nIs memory full? %s\n", isfull() ? "Yes" : "No");
+
+    NewFree(p2);
+    printf("\nAfter freeing the double:\n");
+    showmap();
+
+    NewFree(p1);
+    NewFree(p3);
+
+    printf("\nAfter freeing everything:\n");
+    showmap();
 
     return 0;
 }
